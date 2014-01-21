@@ -50,7 +50,7 @@ post '/products' do
 end
 
 # Update a product
-post '/products/:id' do
+post '/products/:id/update' do
   c = PGconn.new(:host => "localhost", :dbname => dbname)
 
   # Update the product.
@@ -79,6 +79,12 @@ end
 get '/products/:id' do
   c = PGconn.new(:host => "localhost", :dbname => dbname)
   @product = c.exec_params("SELECT * FROM products WHERE products.id = $1;", [params[:id]]).first
+
+  @pcategories = c.exec_params("SELECT c.name FROM categories AS c 
+                        INNER JOIN products_categories AS pc
+                        ON pc.category_id = c.id
+                        WHERE pc.product_id = $1;", [@product["id"].to_i])
+
   c.close
   erb :product
 end
@@ -96,9 +102,51 @@ def create_products_table
   c.close
 end
 
+def create_categories_table
+  c = PGconn.new(:host => "localhost", :dbname => dbname)
+  c.exec %q{
+  CREATE TABLE categories (
+    id SERIAL PRIMARY KEY,
+    name varchar(255)
+  );
+  }
+  c.close
+end
+
+def create_products_categories_table
+  c = PGconn.new(:host => "localhost", :dbname => dbname)
+  c.exec %q{
+  CREATE TABLE products_categories (
+    id SERIAL PRIMARY KEY,
+    product_id integer,
+    category_id integer
+  );
+  }
+  c.close
+end
+
 def drop_products_table
   c = PGconn.new(:host => "localhost", :dbname => dbname)
   c.exec "DROP TABLE products;"
+  c.close
+end
+
+def seed_products_categories_table
+  links = [[1,4], [7,1], 
+           [12,1], [1,1]]
+  c = PGconn.new(:host => "localhost", :dbname => dbname)
+  links.each do |l|
+    c.exec_params("INSERT INTO products_categories (product_id,category_id) VALUES ($1, $2);", l)
+  end
+  c.close
+end
+
+def seed_categories_table
+  categories = [["Toys"], ["Kitchen"], ["Bathroom"], ["Appliance"]]
+  c = PGconn.new(:host => "localhost", :dbname => dbname)
+  categories.each do |cat|
+    c.exec_params("INSERT INTO categories (name) VALUES ($1);", cat)
+  end
   c.close
 end
 

@@ -2,6 +2,12 @@
 <p> Price: <%= @product["price"] %></p>
 <p> <%= @product["description"] %></p>
 
+<% str = "Categories: " %>
+	<% @pcategories.each do |value| %>
+		<% str += value["name"] + ", " %>
+	<% end %>
+<p> <%= str %> <p>
+
 <a href="<%=@product["id"]%>/edit"> Edit this product.</a>
 <form action="/products/<%= @product["id"] %>/destroy" method="post">
     <input type="submit" name="" value="Delete this product.">
